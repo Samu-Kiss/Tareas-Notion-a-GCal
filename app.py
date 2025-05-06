@@ -1,10 +1,13 @@
-# app.py - Main application with webhook handlers
+# app.py - Serverless version for Vercel
 from flask import Flask, request, jsonify
-import threading
-from notion_utils import get_page_data, notion
-from calendar_utils import create_or_update_calendar_event, delete_calendar_event
+from notion_utils import get_page_data
+from calendar_utils_vercel import create_or_update_calendar_event, delete_calendar_event
 
 app = Flask(__name__)
+
+@app.route('/', methods=['GET'])
+def home():
+    return "Notion-Calendar Integration is running!"
 
 @app.route('/notion-webhook', methods=['POST'])
 def notion_webhook():
@@ -43,11 +46,3 @@ def notion_webhook():
             print(f"Error handling deleted page: {e}")
 
     return jsonify({"status": "success"}), 200
-
-def main():
-    # Start the Flask server in a separate thread
-    threading.Thread(target=lambda: app.run(host='0.0.0.0', port=5000, debug=False)).start()
-    print("Webhook server started on port 5000")
-
-if __name__ == '__main__':
-    main()

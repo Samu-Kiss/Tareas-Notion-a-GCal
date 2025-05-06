@@ -1,29 +1,24 @@
-# calendar_utils.py - Google Calendar related functions
-import os.path
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
+# calendar_utils_vercel.py - Adapted for Vercel
+import os
+from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
-from config import SCOPES, CALENDAR_ID, STATUS_COLORS
+from config import CALENDAR_ID, STATUS_COLORS
 
 def get_calendar_service():
-    """Get authenticated Google Calendar service"""
-    creds = None
+    """Get authenticated Google Calendar service using service account"""
+    # For Vercel, we use a service account instead of OAuth flow
+    # The credentials JSON is stored as an environment variable
+    creds_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_KEY')
+    if not creds_json:
+        raise ValueError("Google service account credentials not found")
 
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    # Create credentials from the service account info
+    creds = Credentials.from_service_account_info(
+        eval(creds_json),
+        scopes=['https://www.googleapis.com/auth/calendar']
+    )
 
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
-
+    # Build the service
     return build('calendar', 'v3', credentials=creds)
 
 def get_color_id_by_status(status):
